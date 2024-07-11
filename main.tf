@@ -31,35 +31,30 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_lifecycle" {
   }
 }
 
-resource "aws_secretsmanager_secret" "ssh_key_pair" {
-  name = "ssh_key_pair"
+resource "aws_secretsmanager_secret" "ssh_public_key" {
+  name = "ssh_public_key"
 }
 
-resource "aws_secretsmanager_secret_version" "ssh_public_key" {
-  secret_id     = aws_secretsmanager_secret.ssh_key_pair.id
-  secret_string = file("${path.module}/id_rsa.pub")
+resource "aws_secretsmanager_secret_version" "ssh_public_key_version" {
+  secret_id     = aws_secretsmanager_secret.ssh_public_key.id
+  secret_string = file("${path.module}/ssh_public_key.json")
 }
 
-resource "aws_secretsmanager_secret_version" "ssh_private_key" {
-  secret_id     = aws_secretsmanager_secret.ssh_key_pair.id
-  secret_string = file("${path.module}/id_rsa")
+data "aws_secretsmanager_secret" "ssh_public_key" {
+  name = aws_secretsmanager_secret.ssh_public_key.name
 }
 
-data "aws_secretsmanager_secret" "ssh_key_pair" {
-  name = aws_secretsmanager_secret.ssh_key_pair.name
+data "aws_secretsmanager_secret_version" "ssh_public_key_version" {
+  secret_id = data.aws_secretsmanager_secret.ssh_public_key.id
 }
 
-data "aws_secretsmanager_secret_version" "ssh_public_key" {
-  secret_id = data.aws_secretsmanager_secret.ssh_key_pair.id
-}
-
-data "aws_secretsmanager_secret_version" "ssh_private_key" {
-  secret_id = data.aws_secretsmanager_secret.ssh_key_pair.id
+locals {
+  ssh_public_key = jsondecode(data.aws_secretsmanager_secret_version.ssh_public_key_version.secret_string).public_key
 }
 
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
-  public_key = data.aws_secretsmanager_secret_version.ssh_public_key.secret_string
+  public_key = local.ssh_public_key
 }
 
 resource "aws_instance" "k8s_practice" {
@@ -89,7 +84,7 @@ resource "aws_instance" "k8s_practice" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = data.aws_secretsmanager_secret_version.ssh_private_key.secret_string
+      private_key = var.ssh_private_key
       host        = self.public_ip
     }
   }
