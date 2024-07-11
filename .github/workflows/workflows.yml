@@ -32,7 +32,8 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform destroy
-        env:
-          TF_VAR_ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
         run: terraform destroy -auto-approve
