@@ -9,7 +9,7 @@ module "security_group" {
 
 module "master" {
   source              = "./modules/ec2"
-  ami                 = "ami-0c55b159cbfafe1f0"
+  ami                 = "ami-0c2272b2da6755fab"
   instance_type       = "t2.medium"
   subnet_id           = module.vpc.subnet_id
   security_group_ids  = [module.security_group.security_group_id]
@@ -20,7 +20,7 @@ module "master" {
 
 module "workers" {
   source              = "./modules/ec2"
-  ami                 = "ami-0c55b159cbfafe1f0"
+  ami                 = "ami-0c2272b2da6755fab"
   instance_type       = "t2.micro"
   subnet_id           = module.vpc.subnet_id
   security_group_ids  = [module.security_group.security_group_id]
