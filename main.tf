@@ -25,9 +25,35 @@ resource "aws_s3_bucket" "terraform_state" {
   }
 }
 
+resource "aws_secretsmanager_secret" "ssh_key_pair" {
+  name = "ssh_key_pair"
+}
+
+resource "aws_secretsmanager_secret_version" "ssh_public_key" {
+  secret_id     = aws_secretsmanager_secret.ssh_key_pair.id
+  secret_string = file("${path.module}/id_rsa.pub")
+}
+
+resource "aws_secretsmanager_secret_version" "ssh_private_key" {
+  secret_id     = aws_secretsmanager_secret.ssh_key_pair.id
+  secret_string = file("${path.module}/id_rsa")
+}
+
+data "aws_secretsmanager_secret" "ssh_key_pair" {
+  name = aws_secretsmanager_secret.ssh_key_pair.name
+}
+
+data "aws_secretsmanager_secret_version" "ssh_public_key" {
+  secret_id = data.aws_secretsmanager_secret.ssh_key_pair.id
+}
+
+data "aws_secretsmanager_secret_version" "ssh_private_key" {
+  secret_id = data.aws_secretsmanager_secret.ssh_key_pair.id
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
-  public_key = file("${path.module}/id_rsa.pub") # Path to your public key file
+  public_key = data.aws_secretsmanager_secret_version.ssh_public_key.secret_string
 }
 
 resource "aws_instance" "k8s_practice" {
@@ -57,7 +83,7 @@ resource "aws_instance" "k8s_practice" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("${path.module}/id_rsa") # Path to your private key file
+      private_key = data.aws_secretsmanager_secret_version.ssh_private_key.secret_string
       host        = self.public_ip
     }
   }
