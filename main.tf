@@ -4,26 +4,22 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket         = "kr-statefile" # Replace with your bucket name
+    bucket         = "kr-statefile" # Use the existing bucket
     key            = "backend-sf/simulator.tfstate" # Replace with your desired state file path
     region         = "us-west-2" # Update to your preferred region
     encrypt        = true
   }
 }
 
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "kr-statefile" # Replace with a unique bucket name
-}
-
 resource "aws_s3_bucket_versioning" "terraform_state_versioning" {
-  bucket = aws_s3_bucket.terraform_state.id
+  bucket = "kr-statefile" # Use the existing bucket
   versioning_configuration {
     status = "Enabled"
   }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_lifecycle" {
-  bucket = aws_s3_bucket.terraform_state.id
+  bucket = "kr-statefile" # Use the existing bucket
 
   rule {
     id     = "retain"
