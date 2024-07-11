@@ -31,6 +31,27 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_lifecycle" {
   }
 }
 
+data "aws_secretsmanager_secret" "ssh_public_key" {
+  name = "ssh_public_key"
+}
+
+data "aws_secretsmanager_secret_version" "ssh_public_key_version" {
+  secret_id = data.aws_secretsmanager_secret.ssh_public_key.id
+}
+
+data "aws_secretsmanager_secret" "ssh_private_key" {
+  name = "ssh_private_key"
+}
+
+data "aws_secretsmanager_secret_version" "ssh_private_key_version" {
+  secret_id = data.aws_secretsmanager_secret.ssh_private_key.id
+}
+
+locals {
+  ssh_public_key  = base64decode(data.aws_secretsmanager_secret_version.ssh_public_key_version.secret_string)
+  ssh_private_key = base64decode(data.aws_secretsmanager_secret_version.ssh_private_key_version.secret_string)
+}
+
 resource "aws_key_pair" "deployer" {
   key_name   = "deployer-key"
   public_key = local.ssh_public_key
@@ -67,7 +88,7 @@ resource "aws_instance" "k8s_practice" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = var.ssh_private_key
+      private_key = local.ssh_private_key
       host        = self.public_ip
     }
   }
