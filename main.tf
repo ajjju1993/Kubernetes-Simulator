@@ -31,17 +31,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_lifecycle" {
   }
 }
 
-resource "aws_secretsmanager_secret" "ssh_public_key" {
-  name = "ssh_public_key"
-}
-
-resource "aws_secretsmanager_secret_version" "ssh_public_key_version" {
-  secret_id     = aws_secretsmanager_secret.ssh_public_key.id
-  secret_string = file("${path.module}/ssh_public_key.json")
-}
-
 data "aws_secretsmanager_secret" "ssh_public_key" {
-  name = aws_secretsmanager_secret.ssh_public_key.name
+  name = "ssh_public_key"
 }
 
 data "aws_secretsmanager_secret_version" "ssh_public_key_version" {
